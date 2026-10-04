@@ -1,0 +1,68 @@
+@import '@angular/material/prebuilt-themes/azure-blue.css';
+
+:root {
+  font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+  color: #172e3a;
+  background: #edf1f3;
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; margin: 0; }
+body { min-width: 320px; }
+
+.page {
+  padding: 22px;
+}
+
+.page-head {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.page-head h1 {
+  margin: 3px 0 4px;
+  font-size: clamp(23px, 3vw, 31px);
+}
+
+.eyebrow {
+  margin: 0;
+  color: #6c7a84;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .13em;
+}
+
+.muted { color: #6c7882; }
+
+.panel {
+  border: 1px solid #dce3e6;
+  border-radius: 10px;
+  background: #fff;
+  box-shadow: 0 8px 25px rgb(24 55 70 / 6%);
+}
+
+.panel-head {
+  display: flex;
+  min-height: 50px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 16px;
+  border-bottom: 1px solid #e6ebed;
+}
+
+.panel-head h3 { margin: 0; font-size: 15px; }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 760px) {
+  .page { padding: 12px; }
+  .page-head { align-items: flex-start; flex-direction: column; }
+}
