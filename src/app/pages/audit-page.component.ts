@@ -32,7 +32,7 @@ import { StatusChipComponent } from '../shared/status-chip.component'
         <section class="panel">
           <div class="panel-head"><h3>案件操作时间线</h3><span class="muted">{{ claim.audit.length }} 条记录</span></div>
           <div class="timeline">
-            <article *ngFor="let event of claim.audit.slice().reverse(); let first = first">
+            <article *ngFor="let event of claim.audit.slice().reverse(); let first = first" [class.invalidated]="event.action === '会签失效'" [class.conflict]="event.action === '会签冲突'">
               <div class="time">{{ event.at }}</div>
               <div class="rail"><i></i><b *ngIf="!first"></b></div>
               <div class="event">
@@ -81,6 +81,8 @@ import { StatusChipComponent } from '../shared/status-chip.component'
     .event strong { font-size: 13px; }
     .event p { margin: 6px 0; color: #56656e; font-size: 12px; line-height: 1.55; }
     .event small { color: #89949b; font-size: 10px; }
+    .timeline article.invalidated .event { background: #fff7ef; border-left: 3px solid #ce743e; padding: 0 8px 18px 12px; }
+    .timeline article.conflict .event { background: #fdf1ea; border-left: 3px solid #b55a2e; padding: 0 8px 18px 12px; }
     aside { display: grid; gap: 14px; }
     .file-list { padding: 8px 14px 16px; }
     .file-list > div { padding: 10px 0; border-bottom: 1px solid #edf0f2; }

@@ -29,6 +29,9 @@ export type ApprovalStep = {
   operator?: string
   comment?: string
   completedAt?: string
+  // 会签依据：通过时所依据的准备金与报价版本组合；报价版本一变，依据即失效
+  basisReserve?: number
+  basisQuoteVersion?: string
 }
 
 export type ClaimCase = {
@@ -42,6 +45,8 @@ export type ClaimCase = {
   status: ClaimStatus
   riskLevel: '低' | '中' | '高'
   reserve: number
+  // 案件修订号：报价并入或会签落账后自增，作为乐观并发与依据一致性的版本号
+  version?: number
   paid: number
   deductible: number
   lossItems: LossItem[]

@@ -32,7 +32,15 @@ import { StatusChipComponent } from '../shared/status-chip.component'
 
       <div class="review-grid">
         <section class="panel">
-          <div class="panel-head"><h3>会签流程</h3><app-status-chip [label]="claim.status" [tone]="claim.status === '退回补件' ? 'warn' : 'good'" /></div>
+          <div class="panel-head">
+            <h3>会签流程</h3>
+            <div class="head-actions">
+              <button mat-stroked-button (click)="demoConcurrent(claim)" [disabled]="!firstPending(claim)">模拟两人同时提交</button>
+              <button mat-stroked-button (click)="demoRetry(claim)" [disabled]="!firstPending(claim)">模拟失败后重试</button>
+              <app-status-chip [label]="claim.status" [tone]="claim.status === '退回补件' ? 'warn' : 'good'" />
+            </div>
+          </div>
+          <p class="basis-note">会签与准备金、报价版本为同一份依据：报价版本一变，跨过阈值的已通过级次立即失效退回待处理。</p>
           <mat-stepper orientation="vertical" [linear]="false" class="approval-stepper">
             <mat-step *ngFor="let step of claim.approvals; let index = index" [completed]="step.status === '已通过'">
               <ng-template matStepLabel>
@@ -42,6 +50,12 @@ import { StatusChipComponent } from '../shared/status-chip.component'
               <div class="step-body">
                 <p>{{ step.comment || (step.status === '待处理' ? '等待当前审核人处理。' : step.status + '。') }}</p>
                 <small *ngIf="step.operator">{{ step.operator }} · {{ step.completedAt }}</small>
+                <small class="basis" *ngIf="step.status === '已通过' && step.basisReserve">
+                  依据准备金 {{ step.basisReserve | currency:'CNY':'symbol':'1.0-0' }} · 报价版本 {{ step.basisQuoteVersion }}
+                </small>
+                <small class="basis pending" *ngIf="step.status === '待处理'">
+                  当前准备金 {{ claim.reserve | currency:'CNY':'symbol':'1.0-0' }} · 报价版本 {{ digest(claim) }}
+                </small>
                 <div class="step-actions" *ngIf="step.status === '待处理'">
                   <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>审批意见</mat-label><input matInput [(ngModel)]="comments[index]" /></mat-form-field>
                   <button mat-flat-button color="primary" [disabled]="!comments[index]?.trim()" (click)="decide(claim.id, step.role, '已通过', index)">通过</button>
@@ -106,6 +120,10 @@ import { StatusChipComponent } from '../shared/status-chip.component'
     .disputes > div.disputed { color: #b55a2e; }
     .disputes strong { font-size: 12px; }
     .disputes p { margin: 5px 0 0; color: #6d7981; font-size: 11px; line-height: 1.5; }
+    .head-actions { display: flex; align-items: center; gap: 8px; }
+    .basis-note { margin: 0 0 12px; color: #5d6d74; font-size: 12px; line-height: 1.5; }
+    .basis { display: block; margin-top: 4px; color: #2c7f89; font-size: 11px; }
+    .basis.pending { color: #8a6d3b; }
     @media (max-width: 1050px) { .review-grid { grid-template-columns: 1fr; } }
   `],
 })
@@ -133,13 +151,47 @@ export class ReviewPageComponent {
     return claim.lossItems.filter((item: any) => item.disputed).length
   }
 
+  digest(claim: ClaimCase) {
+    return claim.lossItems.map((item) => `${item.id}:v${item.repairQuotes.at(-1)?.version ?? 0}`).join(' · ')
+  }
+
+  firstPending(claim: ClaimCase) {
+    return claim.approvals.find((step) => step.status === '待处理')
+  }
+
   decide(claimId: string, role: string, result: string, index: number) {
     const comment = this.comments[index]?.trim()
     if (!comment) return
-    this.service.approve(claimId, { role, result, comment }).subscribe(() => {
-      this.store.select(selectSelectedClaim).subscribe((claim) => this.store.dispatch(updateClaim({ claim: structuredClone(claim) })))
-      this.snackBar.open(result === '已通过' ? '会签通过，已流转至下一级' : '案件已退回补件，原始记录未修改', '关闭', { duration: 2200 })
+    this.service.approve(claimId, { role, result, comment }).subscribe((outcome) => {
+      this.store.dispatch(updateClaim({ claim: structuredClone(outcome.claim) }))
+      if (outcome.conflict) {
+        this.snackBar.open('该会签步骤已被他人先处理，后到提交仅记录冲突', '关闭', { duration: 2800 })
+      } else {
+        this.snackBar.open(result === '已通过' ? '会签通过，已流转至下一级' : '案件已退回补件，原始记录未修改', '关闭', { duration: 2200 })
+      }
       this.comments[index] = ''
     })
+  }
+
+  // 演练：两人同时提交同一步会签，先到者成立，后到者只留冲突
+  demoConcurrent(claim: ClaimCase) {
+    const step = this.firstPending(claim)
+    if (!step) return
+    this.service.approveConcurrently(claim.id, { role: step.role, comment: '并发会签演练：两人同时通过' }).subscribe((outcome) => {
+      this.store.dispatch(updateClaim({ claim: structuredClone(outcome.claim) }))
+      this.snackBar.open(outcome.conflict ? '先到者已成立，后到者仅记录冲突（409）' : '会签已通过', '关闭', { duration: 2800 })
+    })
+  }
+
+  // 演练：首次写入响应丢失，按原操作号重试，不重复记账
+  demoRetry(claim: ClaimCase) {
+    const step = this.firstPending(claim)
+    if (!step) return
+    this.service
+      .approve(claim.id, { role: step.role, result: '已通过', comment: '失败重试演练：按原操作号重试' }, { demoFail: true })
+      .subscribe((outcome) => {
+        this.store.dispatch(updateClaim({ claim: structuredClone(outcome.claim) }))
+        this.snackBar.open('首次写入响应丢失，已按原操作号重试成功，未重复记账', '关闭', { duration: 3000 })
+      })
   }
 }

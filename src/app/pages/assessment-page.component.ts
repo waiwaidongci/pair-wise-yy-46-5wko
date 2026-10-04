@@ -57,7 +57,7 @@ import { StatusChipComponent } from '../shared/status-chip.component'
 
       <div class="assessment-grid">
         <section class="panel">
-          <div class="panel-head"><h3>损失科目与报价版本</h3><span class="muted">每次调整必须保留理由</span></div>
+          <div class="panel-head"><h3>损失科目与报价版本</h3><span class="muted">每次调整必须保留理由 · 报价版本并入后准备金自动重算，跨过阈值的会签级次立即失效</span></div>
           <mat-accordion multi>
             <mat-expansion-panel *ngFor="let item of claim.lossItems; let itemIndex = index" [expanded]="itemIndex === activeIndex" (opened)="activeIndex = itemIndex">
               <mat-expansion-panel-header>
@@ -190,8 +190,15 @@ export class AssessmentPageComponent {
   }
 
   suggestedReserve(claim: any) {
-    const net = claim.lossItems.reduce((sum: number, item: any) => sum + (this.latestQuote(item) - item.salvage) * item.liability, 0)
-    return Math.max(0, net - claim.deductible)
+    const net = claim.lossItems.reduce((sum: number, item: any) => {
+      const latest = this.latestQuote(item)
+      return sum + Math.max(0, latest - item.salvage) * item.liability
+    }, 0)
+    return Math.max(0, Math.round(net - claim.deductible))
+  }
+
+  digest(claim: ClaimCase) {
+    return claim.lossItems.map((item) => `${item.id}:v${item.repairQuotes.at(-1)?.version ?? 0}`).join(' · ')
   }
 
   disputedCount(claim: { lossItems: Array<{ disputed: boolean }> }) {
@@ -206,9 +213,19 @@ export class AssessmentPageComponent {
 
   submitQuote(claimId: string, itemId: string) {
     if (!this.quoteReason.trim()) return
-    this.service.addQuote(claimId, { itemId, amount: Number(this.quoteAmount), reason: this.quoteReason }).subscribe(() => {
-      this.store.select(selectSelectedClaim).subscribe((claim) => this.store.dispatch(updateClaim({ claim: structuredClone(claim) })))
-      this.snackBar.open('新报价版本已生成，原记录保持可追溯', '关闭', { duration: 2200 })
+    const before = this.store.selectSignal(selectSelectedClaim)()
+    const beforePending = before?.approvals.filter((step) => step.status === '待处理').length ?? 0
+    this.service.addQuote(claimId, { itemId, amount: Number(this.quoteAmount), reason: this.quoteReason }).subscribe((outcome) => {
+      this.store.dispatch(updateClaim({ claim: structuredClone(outcome.claim) }))
+      const afterPending = outcome.claim.approvals.filter((step) => step.status === '待处理').length
+      const newlyInvalidated = Math.max(0, afterPending - beforePending)
+      this.snackBar.open(
+        newlyInvalidated > 0
+          ? `新报价版本已生成，准备金已重算；${newlyInvalidated} 个会签级次跨过阈值已失效退回待处理，原因见审计`
+          : '新报价版本已生成，准备金已重算，原记录保持可追溯',
+        '关闭',
+        { duration: 2800 },
+      )
       this.quotingItemId = ''
     })
   }
