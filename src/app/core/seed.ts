@@ -13,7 +13,13 @@ export const seedClaims: ClaimCase[] = [
     riskLevel: '高',
     reserve: 1860000,
     paid: 0,
-    deductible: 50000,
+    deductible: 49400,
+    basis: {
+      version: 1,
+      reserve: 1860000,
+      quoteVersions: { 'LI-01': 2, 'LI-02': 1, 'LI-03': 1 },
+      updatedAt: '2026-09-19 10:30',
+    },
     lossItems: [
       {
         id: 'LI-01',
@@ -22,7 +28,7 @@ export const seedClaims: ClaimCase[] = [
         damage: '高温烟气熏蚀，屋面檩条局部变形约 18 米。',
         repairQuotes: [
           { version: 1, amount: 680000, reason: '初次现场测量报价', operator: '陈立 / 公估', createdAt: '2026-09-12 10:20' },
-          { version: 2, amount: 742000, reason: '补充檩条更换数量和防火涂层恢复费用', operator: '陈立 / 公估', createdAt: '2026-09-18 16:05' },
+          { version: 2, amount: 1300000, reason: '现场复核檩条更换数量、防火涂层恢复及屋面加固费用', operator: '陈立 / 公估', createdAt: '2026-09-18 16:05' },
         ],
         salvage: 18000,
         liability: 0.9,
@@ -32,7 +38,7 @@ export const seedClaims: ClaimCase[] = [
           { id: 'AT-02', name: '结构修复报价_V2.pdf', category: '修复报告', version: 2, uploadedBy: '陈立', uploadedAt: '09-18 16:04' },
           { id: 'AT-03', name: '保单建筑条款摘录.pdf', category: '保单摘录', version: 1, uploadedBy: '陆嘉', uploadedAt: '09-09 09:40' },
         ],
-        expertNotes: ['原始测量记录保留为 680,000 元，补充材料不计入原报价版本。', '檩条变形段需由第三方复测确认。'],
+        expertNotes: ['原始测量记录保留为 680,000 元，V2 已并入当前准备金依据。', '檩条变形段需由第三方复测确认。'],
       },
       {
         id: 'LI-02',
@@ -42,7 +48,7 @@ export const seedClaims: ClaimCase[] = [
         repairQuotes: [
           { version: 1, amount: 520000, reason: '设备厂商初步检修清单', operator: '周岩 / 专家', createdAt: '2026-09-15 14:30' },
         ],
-        salvage: 32000,
+        salvage: 33000,
         liability: 1,
         disputed: false,
         attachments: [{ id: 'AT-04', name: '电机绝缘测试.pdf', category: '专家意见', version: 1, uploadedBy: '周岩', uploadedAt: '09-15 15:10' }],
@@ -62,16 +68,16 @@ export const seedClaims: ClaimCase[] = [
       },
     ],
     approvals: [
-      { role: '查勘员提交', threshold: 0, status: '已通过', operator: '陆嘉', comment: '现场查勘与资料收集完成。', completedAt: '2026-09-19 10:30' },
-      { role: '高级核赔员', threshold: 500000, status: '待处理' },
-      { role: '理赔经理', threshold: 1000000, status: '待处理' },
-      { role: '区域负责人', threshold: 1500000, status: '待处理' },
+      { id: 'AP-01', role: '查勘员提交', threshold: 0, status: '已通过', basisVersion: 1, operator: '陆嘉', comment: '现场查勘与资料收集完成。', completedAt: '2026-09-19 10:30', conflicts: [] },
+      { id: 'AP-02', role: '高级核赔员', threshold: 500000, status: '待处理', basisVersion: 1, conflicts: [] },
+      { id: 'AP-03', role: '理赔经理', threshold: 1000000, status: '待处理', basisVersion: 1, conflicts: [] },
+      { id: 'AP-04', role: '区域负责人', threshold: 1500000, status: '待处理', basisVersion: 1, conflicts: [] },
     ],
     audit: [
       { id: 'A-01', at: '09-08 21:32', operator: '报案中心', action: '案件受理', detail: '完成初步报案信息登记。' },
       { id: 'A-02', at: '09-12 10:20', operator: '陈立', action: '报价录入', detail: '房屋建筑报价 680,000 元。' },
-      { id: 'A-03', at: '09-18 16:05', operator: '陈立', action: '报价调整', detail: '由 680,000 调整为 742,000 元；原因：补充檩条更换及防火涂层恢复。' },
-      { id: 'A-04', at: '09-19 10:30', operator: '陆嘉', action: '提交审批', detail: '准备金 1,860,000 元进入多级会签。' },
+      { id: 'A-03', at: '09-18 16:05', operator: '陈立', action: '报价调整', detail: '由 680,000 调整为 1,300,000 元；原因：现场复核檩条更换、防火涂层及屋面加固。' },
+      { id: 'A-04', at: '09-19 10:30', operator: '陆嘉', action: '提交审批', detail: '依据 V1：报价版本 LI-01=V2、LI-02=V1、LI-03=V1，准备金 1,860,000 元进入多级会签。' },
     ],
   },
   {
@@ -84,9 +90,15 @@ export const seedClaims: ClaimCase[] = [
     adjuster: '林澈 / 浙江财产险',
     status: '查勘中',
     riskLevel: '中',
-    reserve: 860000,
+    reserve: 667200,
     paid: 0,
     deductible: 20000,
+    basis: {
+      version: 1,
+      reserve: 667200,
+      quoteVersions: { 'LI-11': 1, 'LI-12': 1 },
+      updatedAt: '2026-09-24 17:00',
+    },
     lossItems: [
       {
         id: 'LI-11',
@@ -114,13 +126,23 @@ export const seedClaims: ClaimCase[] = [
       },
     ],
     approvals: [
-      { role: '查勘员提交', threshold: 0, status: '已通过', operator: '林澈', completedAt: '2026-09-24 17:00' },
-      { role: '高级核赔员', threshold: 500000, status: '待处理' },
-      { role: '理赔经理', threshold: 1000000, status: '待处理' },
+      { id: 'AP-11', role: '查勘员提交', threshold: 0, status: '已通过', basisVersion: 1, operator: '林澈', completedAt: '2026-09-24 17:00', conflicts: [] },
+      { id: 'AP-12', role: '高级核赔员', threshold: 500000, status: '待处理', basisVersion: 1, conflicts: [] },
+      {
+        id: 'AP-13',
+        role: '理赔经理',
+        threshold: 1000000,
+        status: '已失效',
+        basisVersion: 1,
+        invalidReason: '当前准备金 667,200 元未达到 1,000,000 元阈值，理赔经理级次不适用。',
+        invalidAt: '2026-09-24 17:00',
+        conflicts: [],
+      },
     ],
     audit: [
       { id: 'A-11', at: '09-21 06:18', operator: '报案中心', action: '案件受理', detail: '台风损失报案。' },
       { id: 'A-12', at: '09-22 09:15', operator: '林澈', action: '现场查勘', detail: '上传屋顶和库区照片。' },
+      { id: 'A-13', at: '09-24 17:00', operator: '规则引擎', action: '会签级次判定', detail: '依据 V1：LI-11=V1、LI-12=V1，准备金 667,200 元，仅触发高级核赔员会签；理赔经理级次因未跨阈值置为已失效。' },
     ],
   },
 ]

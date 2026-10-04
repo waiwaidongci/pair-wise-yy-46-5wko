@@ -107,7 +107,7 @@ export class AppComponent implements OnInit {
       this.store.dispatch(loadClaimsSuccess({ items: result.items, total: result.total }))
     })
     this.store.select(selectClaimsState).subscribe((state) => {
-      localStorage.setItem('property-claims-draft-v1', JSON.stringify(state))
+      localStorage.setItem('property-claims-draft-v2', JSON.stringify(state))
       if (state.toast) this.snackBar.open(state.toast, '关闭', { duration: 1800 })
     })
   }

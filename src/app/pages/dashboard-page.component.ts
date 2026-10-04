@@ -104,7 +104,7 @@ import { selectAllClaims, selectFilters, selectFilteredClaims, selectClaim, setF
               </ng-container>
               <ng-container matColumnDef="reserve">
                 <th mat-header-cell *matHeaderCellDef>准备金</th>
-                <td mat-cell *matCellDef="let claim">{{ claim.reserve | currency:'CNY':'symbol':'1.0-0' }}</td>
+                <td mat-cell *matCellDef="let claim">{{ claim.basis.reserve | currency:'CNY':'symbol':'1.0-0' }}</td>
               </ng-container>
               <ng-container matColumnDef="risk">
                 <th mat-header-cell *matHeaderCellDef>风险</th>
@@ -178,8 +178,8 @@ export class DashboardPageComponent {
     this.claims$ = this.store.select(selectAllClaims)
     this.filteredClaims$ = this.store.select(selectFilteredClaims)
     this.filters$ = this.store.select(selectFilters)
-    this.totalReserve$ = this.store.select((state) => state.claims.items.reduce((sum, claim) => sum + claim.reserve, 0))
-    this.pendingApprovals$ = this.store.select((state) => state.claims.items.reduce((sum, claim) => sum + claim.approvals.filter((step) => step.status === '待处理').length, 0))
+    this.totalReserve$ = this.store.select((state) => state.claims.items.reduce((sum, claim) => sum + claim.basis.reserve, 0))
+    this.pendingApprovals$ = this.store.select((state) => state.claims.items.reduce((sum, claim) => sum + claim.approvals.filter((step) => step.status === '待处理' && step.threshold <= claim.basis.reserve).length, 0))
     this.disputedItems$ = this.store.select((state) => state.claims.items.reduce((sum, claim) => sum + claim.lossItems.filter((item) => item.disputed).length, 0))
   }
 

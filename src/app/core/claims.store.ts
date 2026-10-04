@@ -14,7 +14,7 @@ export type ClaimsState = {
 
 export type AppState = { claims: ClaimsState }
 
-const persisted = localStorage.getItem('property-claims-draft-v1')
+const persisted = localStorage.getItem('property-claims-draft-v2')
 
 export const initialClaimsState: ClaimsState = persisted
   ? JSON.parse(persisted)

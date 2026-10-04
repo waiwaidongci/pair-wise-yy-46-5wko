@@ -1,6 +1,10 @@
-import { HttpClient, HttpParams } from '@angular/common/http'
+import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Injectable } from '@angular/core'
-import type { ClaimCase, ClaimFilters, PagedClaims } from './models'
+import { Observable, throwError } from 'rxjs'
+import { catchError } from 'rxjs/operators'
+import type { ClaimCase, ClaimFilters, PagedClaims, ApprovalDecisionRequest, QuoteRevisionRequest } from './models'
+
+const RETRY_STATUSES = [0, 500, 502, 503, 504]
 
 @Injectable({ providedIn: 'root' })
 export class ClaimsService {
@@ -20,11 +24,25 @@ export class ClaimsService {
     return this.http.get<ClaimCase>(`/api/claims/${id}`)
   }
 
-  addQuote(claimId: string, body: { itemId: string; amount: number; reason: string }) {
-    return this.http.post(`/api/claims/${claimId}/quotes`, body)
+  addQuote(claimId: string, body: QuoteRevisionRequest): Observable<ClaimCase> {
+    return this.retryWithSameOperationId(body.operationId, () =>
+      this.http.post<ClaimCase>(`/api/claims/${claimId}/quotes`, body),
+    )
   }
 
-  approve(claimId: string, body: { role: string; result: string; comment: string }) {
-    return this.http.post(`/api/claims/${claimId}/approvals`, body)
+  approve(claimId: string, body: ApprovalDecisionRequest): Observable<ClaimCase> {
+    return this.retryWithSameOperationId(body.operationId, () =>
+      this.http.post<ClaimCase>(`/api/claims/${claimId}/approvals`, body),
+    )
+  }
+
+  private retryWithSameOperationId(operationId: string, request: () => Observable<ClaimCase>, attempt = 0): Observable<ClaimCase> {
+    return request().pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (attempt >= 1 || !RETRY_STATUSES.includes(error.status)) return throwError(() => error)
+        console.warn(`写入失败，按原操作号 ${operationId} 重试（第 ${attempt + 1} 次）`)
+        return this.retryWithSameOperationId(operationId, request, attempt + 1)
+      }),
+    )
   }
 }

@@ -30,7 +30,10 @@ import { StatusChipComponent } from '../shared/status-chip.component'
 
       <div class="audit-grid">
         <section class="panel">
-          <div class="panel-head"><h3>案件操作时间线</h3><span class="muted">{{ claim.audit.length }} 条记录</span></div>
+          <div class="panel-head">
+            <h3>案件操作时间线</h3>
+            <span class="basis-badge"><mat-icon>link</mat-icon>依据 V{{ claim.basis.version }} · {{ claim.basis.reserve | currency:'CNY':'symbol':'1.0-0' }}</span>
+          </div>
           <div class="timeline">
             <article *ngFor="let event of claim.audit.slice().reverse(); let first = first">
               <div class="time">{{ event.at }}</div>
@@ -38,7 +41,7 @@ import { StatusChipComponent } from '../shared/status-chip.component'
               <div class="event">
                 <strong>{{ event.action }}</strong>
                 <p>{{ event.detail }}</p>
-                <small>{{ event.operator }} · 记录编号 {{ event.id }}</small>
+                <small>{{ event.operator }} · 记录编号 {{ event.id }}<ng-container *ngIf="event.operationId"> · 操作号 {{ event.operationId }}</ng-container></small>
               </div>
             </article>
           </div>
@@ -71,6 +74,8 @@ import { StatusChipComponent } from '../shared/status-chip.component'
   `,
   styles: [`
     .audit-grid { display: grid; grid-template-columns: minmax(0,1fr) 380px; gap: 14px; align-items: start; }
+    .basis-badge { display: inline-flex; align-items: center; gap: 4px; color: #175866; font-weight: 800; }
+    .basis-badge mat-icon { font-size: 16px; width: 16px; height: 16px; }
     .timeline { padding: 18px 20px; }
     .timeline article { display: grid; grid-template-columns: 72px 22px minmax(0,1fr); }
     .time { padding-top: 2px; color: #66757e; font-family: monospace; font-size: 11px; text-align: right; }
@@ -115,7 +120,7 @@ export class AuditPageComponent {
   }
 
   exportAudit(claim: any) {
-    const lines = ['时间,操作者,动作,说明', ...claim.audit.map((event: any) => [event.at, event.operator, event.action, event.detail].map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))]
+    const lines = ['时间,操作者,动作,说明,操作号', ...claim.audit.map((event: any) => [event.at, event.operator, event.action, event.detail, event.operationId ?? ''].map((cell) => `"${String(cell).replaceAll('"', '""')}"`).join(','))]
     const url = URL.createObjectURL(new Blob([`\uFEFF${lines.join('\n')}`], { type: 'text/csv;charset=utf-8' }))
     const link = document.createElement('a')
     link.href = url
